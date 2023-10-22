@@ -1,7 +1,9 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <bits/stdc++.h>
-#include "setting.h"
+#define SERVER_ADDR "127.0.0.1"
+#define SERVER_PORT 5500
+#define BUFF_MAXSIZE 1024
 using namespace std;
 
 int main(int argc, char *argv[]) {
@@ -81,7 +83,7 @@ int main(int argc, char *argv[]) {
     }
     else{
         buff[bytesReceived] = '\0';
-        cout << "Received: " << buff << endl;
+        cout << "Received from server " << inet_ntoa(serverAddr.sin_addr) << ":" << ntohs(serverAddr.sin_port) << " : " << buff << endl;
     }
      while(1){
         char buff2[BUFF_MAXSIZE];
@@ -89,8 +91,9 @@ int main(int argc, char *argv[]) {
              "\n||==============|CHUONG TRINH LOGIN|============================||"
              "\n||             --------CAC CHUC NANG--------                    ||"
              "\n||               0.Disconnect                                   ||"
-             "\n||               1..\\TCPClient LOGOUT                           ||"
-             "\n||               2..\\TCPClient LOGIN <id> <password>            ||"
+             "\n||               1.LOGOUT                                       ||"
+             "\n||     ** **     2.LOGIN <id> <password>          ** **         ||"
+             "\n||     ** **     3.REGISTER <id> <password>          ** **      ||"
              "\n||==============================================================||\n";
         cout << "Input: " << endl;
         cin.getline(buff2,BUFF_MAXSIZE);
@@ -110,7 +113,7 @@ int main(int argc, char *argv[]) {
         }       
         else{
             buff2[bytesReceived] = '\0';
-            cout << "Respone from server: " << buff2 << endl;
+            cout << "Received from server " << inet_ntoa(serverAddr.sin_addr) << ":" << ntohs(serverAddr.sin_port) << " : " << buff2 << endl;
         }
     }
 

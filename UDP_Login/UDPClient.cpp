@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
         WSACleanup();
     }
     buff1[recvLen] = '\0';
-    cout << "Response from Server" << buff1 << endl;
+    cout << "Respone from server " << inet_ntoa(serverResponse.sin_addr) << ":" << ntohs(serverResponse.sin_port) << " : " << buff1 << endl;
     while(1){
         char buff2[BUFLEN];
         cout<<"\n[XIN VUI LONG NHAN 7 NEU BAN MUON NHAP DU LIEU DA LUU VAO CHUONG TRINH]"
@@ -77,9 +77,11 @@ int main(int argc, char *argv[]) {
              "\n||               0.Disconnect                                   ||"
              "\n||               1.LOGOUT                                       ||"
              "\n||     ** **     2.LOGIN <id> <password>          ** **         ||"
+             "\n||     ** **     3.REGISTER <id> <password>          ** **      ||"
              "\n||==============================================================||\n";
         cout << "Input: " << endl;
         cin.getline(buff2,BUFLEN);
+
         if (sendto(clientSocket, buff2, strlen(buff2), 0, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
             cerr << "sendto() failed with error code: " << WSAGetLastError() << endl;
             break;
@@ -101,7 +103,7 @@ int main(int argc, char *argv[]) {
         }
         else{
             buff2[recvLen2] = '\0';
-            cout << "Respone from server: " << buff2 << endl;
+            cout << "Respone from server " << inet_ntoa(serverResponse.sin_addr) << ":" << ntohs(serverResponse.sin_port) << " : " << buff2 << endl;
         }
     }
 

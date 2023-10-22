@@ -1,16 +1,10 @@
-// #define NTDDI_VERSION NTDDI_VISTA
-// #define WINVER _WIN32_WINNT_VISTA
-// #define _WIN32_WINNT _WIN32_WINNT_VISTA
 #include <winsock2.h>
 #include <WS2tcpip.h>
 #include <bits/stdc++.h>
-#include "setting.h"
-
-// need link with Ws2_32.lib VS
-//#pragma comment(lib, "Ws2_32.lib")
-
 using namespace std;
-
+#define SERVER_ADDR "127.0.0.1"
+#define SERVER_PORT 5500
+#define BUFF_MAXSIZE 1024
 class User{
     private :
         string tk;
@@ -63,16 +57,7 @@ class User{
 bool User::isLoggedIn = false;
 string User::saveID ="";
 vector<User> userData;
-//convert string to bool
-int string_to_int(string &str){
-    if(str == "0"){
-        return 0;
-    }
-    if(str == "1"){
-        return 1;
-    }
-    return 0;
-}
+
 vector<User> write_to_class(){
     
     vector<User> userDataRead;
@@ -113,9 +98,9 @@ vector<User> write_to_class(){
     return userDataRead;
 }
 
-void writefileLogin(int count_line){
-    ifstream file_read("database.csv", ios::in);
+void writefileLogin(int count_line, string num){
 
+    ifstream file_read("database.csv", ios::in);
     string line_out;
     vector<string> data;
     while(getline(file_read,line_out)){
@@ -124,7 +109,7 @@ void writefileLogin(int count_line){
 
     size_t LastComma = data[count_line].find_last_of(",");
     if(LastComma != string::npos){
-        data[count_line].replace(LastComma + 1, 1, "1");
+        data[count_line].replace(LastComma + 1, 1, num);
     }
     
     ofstream file_write("database.csv", ios::out) ;
@@ -137,92 +122,74 @@ void writefileLogin(int count_line){
     
 }
 
-void writefileLogout(int count_line){
-    ifstream file_read("database.csv", ios::in);
-
-    string line_out;
-    vector<string> data;
-    while(getline(file_read,line_out)){
-        data.push_back(line_out);
-    }
-
-    size_t LastComma = data[count_line].find_last_of(",");
-    if(LastComma != string::npos){
-        data[count_line].replace(LastComma + 1, 1, "0");
-    }
-
-    ofstream file_write("database.csv", ios::out) ;
-
-    for(string x : data){
-        file_write << x << "\n";
-    }
-
-    file_write.close();
-    
-}
-
-string Checking(const string &in){
-    
+string Checking(string in){
     userData = write_to_class();
     istringstream iss(in);
     string work, id, pass;
     iss >> work >> id >> pass;
-    cout << "--------------------------\n";
-    for(User &user : userData){
-        cout << user.getTk() << " " << user.getMk() << " " << user.getStatus() << " " << user.getLogin() << endl;
-    }
-    cout << "--------------------------\n";
+    
     if(work == "LOGIN"){
+        for(int i = 0; i < userData.size(); i++){
+            if(userData[i].getLogin() == 1){
+                User::Login(userData[i].getTk());
+                string tmp1 = "You must logout this user *";
+                string tmp2 = "* before login another";
+                string tmp = tmp1 + User::saveID + tmp2;
+                return tmp;
+            }
+        }
         for(int i = 0; i < userData.size(); i++){
             if(id == userData[i].getTk()){
                 if(pass == userData[i].getMk()){
-                    if(userData[i].getLogin() == 1 && User::isLoggedIn == true){
-                        string tmp1 = "You must logout this user *";
-                        string tmp2 = "* before login another";
-                        string tmp = tmp1 + User::saveID + tmp2;
-                        return tmp;
-                    }
-                    else if(userData[i].getLogin() == 0 && User::isLoggedIn == true){
-                        string tmp1 = "You must logout this user *";
-                        string tmp2 = "* before login another";
-                        string tmp = tmp1 + User::saveID + tmp2;
-                        return tmp;
-                    }
-                    else if(userData[i].getLogin() == 1){
-                        User::Login(userData[i].getTk());
-                        string tmp = "already logged in this user " + userData[i].getTk();
-                        return tmp;
-                    }
-                    else{
-                        cout << i << endl;
-                        writefileLogin(i); 
+                    if(userData[i].getStatus() == 0){
+                        return "haven't registered an account yet";
+                    }else{
+                        writefileLogin(i,"1"); 
                         User::Login(userData[i].getTk());
                         string tmp = "success loggin!...id: " + userData[i].getTk();
                         return tmp;
                     }
-                }
-                else if(User::isLoggedIn == true){
-                    string tmp1 = "You must logout this user ";
-                    string tmp2 = " before login another";
-                    string tmp = tmp1 + User::saveID + tmp2;
-                    return tmp;
+                        
                 }
                 else{
-                    return "Invalid password";
+                    return "Wrong password!";
                 }
             }  
         }
-        return "Invalid id";
+        for(int i = 0; i < userData.size(); i++){
+            if(pass == userData[i].getMk()){
+                return "Wrong id!";
+            }
+        }
+        return "this user haven't registered an account yet";
     }
     else if(work == "LOGOUT"){
         for(int i = 0; i < userData.size();i++){
-            if(User::saveID == userData[i].getTk()){
-                writefileLogout(i);
+            if(userData[i].getLogin() == 1){
+                writefileLogin(i,"0");
                 User::Logout(userData[i].getTk());
                 string tmp = "success logout!...id: " + userData[i].getTk();
                 return tmp;
             }
         }
+        return "haven't logged in yet";
+    }
+    else if(work == "REGISTER"){
+        for(int i = 0; i < userData.size(); i++){
+            if(id == userData[i].getTk()){
+                return "This id has been registered";
+            }
+        }
+        User user;
+        user.setTk(id);
+        user.setMk(pass);
+        user.setStatus(1);
+        user.setLog(0);
+        userData.push_back(user);
+        ofstream file("database.csv", ios::app);
+        file << id << "," << pass << "," << "1" << "," << "0" << "\n";
+        file.close();
+        return "success register!...id: " + id;
     }
     return "Invalid format";
 }
@@ -249,8 +216,16 @@ int main(){
     sockaddr_in tcpSeverAddr;
     tcpSeverAddr.sin_family = AF_INET;
     tcpSeverAddr.sin_port = htons(SERVER_PORT);
-    tcpSeverAddr.sin_addr.S_un.S_addr = inet_addr(SERVER_ADDR);
-
+    //tcpSeverAddr.sin_addr.S_un.S_addr = inet_addr(SERVER_ADDR);
+    //or inet_pton
+    if (inet_pton(AF_INET, SERVER_ADDR, &tcpSeverAddr.sin_addr.S_un.S_addr) == 1) {
+        std::cout << "Server address set using inet_pton." << std::endl;
+    } else {
+        std::cout << "inet_pton failed with error." << std::endl;
+        closesocket(listensock);
+        WSACleanup();
+        return 1;
+    }
     //bind
     if(!bind(listensock, (sockaddr *) &tcpSeverAddr, sizeof(tcpSeverAddr))){
         cout << "Bind API completed successfully." << endl;
@@ -309,15 +284,11 @@ int main(){
                 cerr << "disconnect" << endl;
                 break;
             }
-            if((strcmp(buff, "LOGOUT") == 0) && (User::isLoggedIn == false)){
-                const char* rp_logout_system = "not logging yet!...";
-                ret = send(NewConnection, rp_logout_system, strlen(rp_logout_system), 0);
-            }
             else{
-                string buffStr(buff);
+                string buffStr(buff);//char to string
                 buffStr = Checking(buffStr);
                 cout << "Response from Server: " << buffStr << endl;
-                const char* message = buffStr.c_str();
+                const char* message = buffStr.c_str(); //string to char
                 ret = send(NewConnection, message, strlen(message), 0);
             }
         }
@@ -325,13 +296,8 @@ int main(){
     closesocket(NewConnection);
     closesocket(listensock);
     
-    // Setup winsock communication code here
-    // sockaddr_in a;
-    
-    
     // Call WSACleanup when application finishes
-    if (WSACleanup() != 0)
-        cout << "Clean failed with error." << GetLastError() << endl;
+    if (WSACleanup() != 0)cout << "Clean failed with error." << GetLastError() << endl;
 
     return 0;
 }
